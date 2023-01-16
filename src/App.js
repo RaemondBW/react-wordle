@@ -1,5 +1,6 @@
 import './App.css';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect} from 'react';
+import Cookies from 'js-cookie';
 
 const wordLength = 5;
 const numberOfGuesses = 6;
@@ -128,6 +129,7 @@ const WordleGame = () => {
       if (guessIndex < numberOfGuesses && newGuesses[guessIndex].length === wordLength && scrabbleDictionary.has(newGuesses[guessIndex].toUpperCase())) {
         updateLetterValues(newGuesses[guessIndex], word);
         setGuessIndex(guessIndex + 1);
+        Cookies.set(word, JSON.stringify(newGuesses));
       } else {
         setInvalidGuess(true);
       }
@@ -147,6 +149,8 @@ const WordleGame = () => {
   }
 
   useEffect(() => {
+    document.title = 'Wordle Pick';
+
     const urlParams = new URLSearchParams(atob(window.location.search.substring(1)));
     const args = {};
     for (let param of urlParams.entries()) {
@@ -154,7 +158,17 @@ const WordleGame = () => {
     }
     if ('word' in args) {
       setWord(args['word']);
+      if (Cookies.get(args['word'])) {
+        setPreviousGuesses(JSON.parse(Cookies.get(args['word'])));
+        setGuessIndex(previousGuesses.length);
+      }
     }
+
+    fetch(window.location.origin + window.location.pathname + 'dictionary.json')
+    .then(response => response.json())
+    .then(data => {
+      setScrabbleDictionary(new Set(data.dictionary[wordLength-1]));
+    });
 
     function handleKeyDown(e) {
       if (word.length === 0) {
@@ -168,12 +182,6 @@ const WordleGame = () => {
         handleKeyPress(e.key);
       }
     }
-
-    fetch(window.location.origin + window.location.pathname + 'dictionary.json')
-    .then(response => response.json())
-    .then(data => {
-      setScrabbleDictionary(new Set(data.dictionary[wordLength-1]));
-    });
 
     document.addEventListener('keydown', handleKeyDown);
 
@@ -192,7 +200,7 @@ const WordleGame = () => {
           <div className="button">
             <button className="button-text" onClick={() => {
               window.location.href = window.location.origin + window.location.pathname;
-            }}><b>Make my own word!</b></button>
+            }}><b>Make a new game!</b></button>
           </div>
         </div>
       }
