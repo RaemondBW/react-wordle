@@ -36,3 +36,95 @@
     transform: rotate(360deg);
   }
 }
+
+.key {
+  /* some styles for the key */
+  height: 60px;
+  width: 35px;
+  border: 2px solid white;
+  padding: 4px;
+  color: black;
+}
+
+.key.enter {
+  width: 60px;
+}
+
+.key.backspace {
+  width: 60px;
+}
+
+.gameboard {
+  padding: 10px;
+}
+
+.gameboard-row {
+  display: flex;
+  justify-content: center;
+  height: 60px;
+  line-height: 50px;
+}
+
+.letter {
+  color: black;
+  background-color: lightgray;
+  width: 60px;
+  border: 2px solid white;
+  font-size: 25px;
+}
+
+.green {
+  color: white;
+  background-color: #538d4e;
+}
+
+.yellow {
+  color: white;
+  background-color: #b59f3b;
+}
+
+.gray {
+  color: white;
+  background-color: #787c7e;
+}
+
+.button {
+  height: 40px;
+  padding-left:10px;
+  padding-right:10px;
+  padding-top:10px;
+}
+
+.button-text {
+  height: 40px;
+  padding-left:10px;
+  padding-right:10px;
+}
+
+.wordInput {
+  height: 35px;
+  text-align: center;
+}
+
+.wordPickerText {
+  padding:10px;  
+}
+
+@keyframes shake {
+  0% { transform: translate(1px, 1px) rotate(0deg); }
+  10% { transform: translate(-1px, -2px) rotate(-1deg); }
+  20% { transform: translate(-3px, 0px) rotate(1deg); }
+  30% { transform: translate(3px, 2px) rotate(0deg); }
+  40% { transform: translate(1px, -1px) rotate(1deg); }
+  50% { transform: translate(-1px, 2px) rotate(-1deg); }
+  60% { transform: translate(-3px, 1px) rotate(0deg); }
+  70% { transform: translate(3px, 1px) rotate(-1deg); }
+  80% { transform: translate(-1px, -1px) rotate(1deg); }
+  90% { transform: translate(1px, 2px) rotate(0deg); }
+  100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+.shake {
+  animation: shake 0.5s;
+  animation-iteration-count: 1;
+}
