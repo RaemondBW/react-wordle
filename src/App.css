@@ -73,19 +73,50 @@
   font-size: 25px;
 }
 
+/* Each letter turns edge-on, swaps to its colour while it can't be seen, and
+   turns back. Duration and per-letter delay are set inline from App.js. */
+@keyframes flip {
+  0% {
+    transform: rotateX(0deg);
+    color: black;
+    background-color: lightgray;
+    animation-timing-function: ease-in;
+  }
+  49.99% {
+    transform: rotateX(90deg);
+    color: black;
+    background-color: lightgray;
+  }
+  50% {
+    transform: rotateX(90deg);
+    color: white;
+    background-color: var(--status-color);
+    animation-timing-function: ease-out;
+  }
+  100% {
+    transform: rotateX(0deg);
+  }
+}
+
+.letter.flip {
+  animation: flip 0.5s linear backwards;
+}
+
 .green {
-  color: white;
-  background-color: #538d4e;
+  --status-color: #538d4e;
 }
 
 .yellow {
-  color: white;
-  background-color: #b59f3b;
+  --status-color: #b59f3b;
 }
 
 .gray {
+  --status-color: #787c7e;
+}
+
+.green, .yellow, .gray {
   color: white;
-  background-color: #787c7e;
+  background-color: var(--status-color);
 }
 
 .button {
@@ -99,6 +130,31 @@
   height: 40px;
   padding-left:10px;
   padding-right:10px;
+}
+
+.game {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.new-game {
+  margin-top: auto;
+  padding-bottom: 10px;
+}
+
+.new-game-button {
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #787c7e;
+  background-color: #d3d6da;
+}
+
+.new-game-button.game-over {
+  color: white;
+  background-color: #538d4e;
 }
 
 .wordInput {
