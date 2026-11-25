@@ -3,7 +3,7 @@ import React, { useState, useEffect} from 'react';
 import Cookies from 'js-cookie';
 import wordleAnswers from './wordleAnswers.json';
 import { scoreGuess } from './scoring';
-import SessionPanel, { NamePrompt, playerOutcome } from './SessionPanel';
+import { SessionModal, NamePrompt, playerOutcome, playerColor, playerInitial, markerRow } from './SessionPanel';
 import {
   useRoomSession, newRoomId, isValidRoomId, getPlayerId, getSavedName, saveName, cleanName,
   encodeResult, decodeResult,
@@ -79,7 +79,9 @@ const getKeyboardLetterColors = (guesses, answer) => {
   return colors;
 }
 
-const WordleBoard = ({word, previousGuesses, guessIndex, invalidGuess, revealingRow}) => {
+const MAX_MARKERS_PER_ROW = 4;
+
+const WordleBoard = ({word, previousGuesses, guessIndex, invalidGuess, revealingRow, markers = [], onMarkerClick}) => {
 
   const getLetterStatus = (guess, index, activeGuess) => {
     if (activeGuess || index >= guess.length) {
@@ -92,6 +94,7 @@ const WordleBoard = ({word, previousGuesses, guessIndex, invalidGuess, revealing
     <div className="gameboard">
       {previousGuesses.map((guess, word_index) => (
         <div key={word_index} className={`gameboard-row ${(invalidGuess && guessIndex === word_index) ? "shake" : ""}`}>
+          <div className="row-tiles">
           {[...Array(wordLength)].map((e, letter_index) => (
             <div
               key={letter_index}
@@ -104,6 +107,19 @@ const WordleBoard = ({word, previousGuesses, guessIndex, invalidGuess, revealing
               <b>{guess.length > letter_index ? guess[letter_index].toUpperCase() : ''}</b>
             </div>
           ))}
+          {markers[word_index] && markers[word_index].length > 0 &&
+            <button className="row-markers" onClick={onMarkerClick}
+              aria-label={markers[word_index].map((m) => m.name).join(', ')}>
+              {markers[word_index].slice(0, markers[word_index].length > MAX_MARKERS_PER_ROW ? MAX_MARKERS_PER_ROW - 1 : MAX_MARKERS_PER_ROW).map((m) => (
+                <span key={m.id} title={m.name}
+                  className={`player-marker ${m.state} ${m.online ? '' : 'offline'}`}
+                  style={{ backgroundColor: m.color }}>{m.initial}</span>
+              ))}
+              {markers[word_index].length > MAX_MARKERS_PER_ROW &&
+                <span className="player-marker more">+{markers[word_index].length - MAX_MARKERS_PER_ROW + 1}</span>}
+            </button>
+          }
+          </div>
         </div>
       ))}
     </div>
@@ -152,6 +168,14 @@ const WordleGame = () => {
   const [revealingRow, setRevealingRow] = useState(null);
   const [playerName, setPlayerName] = useState(getSavedName);
   const [namePromptOpen, setNamePromptOpen] = useState(room !== null && !getSavedName());
+  const [playersOpen, setPlayersOpen] = useState(false);
+
+  // Drop focus from whatever opened the modal, or typing on a real keyboard
+  // would be ignored (and Enter would just reopen it).
+  const closePlayers = () => {
+    setPlayersOpen(false);
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  };
 
   const isRevealing = revealingRow !== null;
   const gameOver = guessIndex >= numberOfGuesses || previousGuesses.slice(0, guessIndex).includes(word);
@@ -162,10 +186,30 @@ const WordleGame = () => {
 
   const handleNameSubmit = (name) => {
     const clean = cleanName(name);
+    const firstTime = !playerName;
     saveName(clean);
     setPlayerName(clean);
     setNamePromptOpen(false);
+    // Whoever starts a room lands on the invite options; people joining go straight to the game.
+    if (firstTime && Object.keys(session.players).every((id) => id === playerId)) {
+      setPlayersOpen(true);
+    }
   };
+
+  // Everyone else's position, grouped by the board row it belongs on.
+  const rowMarkers = Array.from({ length: numberOfGuesses }, () => []);
+  Object.entries(session.players).forEach(([id, player]) => {
+    if (id === playerId) return;
+    const outcome = playerOutcome(player, word);
+    rowMarkers[markerRow(player, outcome)].push({
+      id,
+      name: player.name || 'Someone',
+      initial: playerInitial(player.name),
+      color: playerColor(id),
+      online: online.includes(id),
+      state: outcome.solved ? 'solved' : outcome.done ? 'failed' : 'playing',
+    });
+  });
 
   const handleInvite = () => shareLink('Play this Wordle with me', gameUrl(word, { room }));
 
@@ -193,7 +237,7 @@ const WordleGame = () => {
   );
 
   const handleKeyPress = (letter) => {
-    if (gameOver || isRevealing || namePromptOpen) {
+    if (gameOver || isRevealing || namePromptOpen || playersOpen) {
       return;
     }
     const newGuesses = [...previousGuesses];
@@ -262,6 +306,10 @@ const WordleGame = () => {
       if (e.target instanceof Element && e.target.closest('input, textarea')) {
         return;
       }
+      if (playersOpen) {
+        if (e.key === 'Escape') closePlayers();
+        return;
+      }
       const focusedButton = e.target instanceof Element ? e.target.closest('button') : null;
       if (focusedButton && !focusedButton.closest('.keyboard')) {
         return;
@@ -297,10 +345,12 @@ const WordleGame = () => {
     <div className="App">
       { word.length !== 0 &&
         <div className="game">
-          <WordleBoard word={word} previousGuesses={previousGuesses} guessIndex={guessIndex} invalidGuess={invalidGuess} revealingRow={revealingRow}/>
+          <WordleBoard word={word} previousGuesses={previousGuesses} guessIndex={guessIndex} invalidGuess={invalidGuess} revealingRow={revealingRow}
+            markers={room ? rowMarkers : []} onMarkerClick={() => setPlayersOpen(true)}/>
           <Keyboard handleKeyPress={handleKeyPress} letterColors={keyboardLetterColors}/>
-          { room &&
-            <SessionPanel
+          { room && playersOpen &&
+            <SessionModal
+              onClose={closePlayers}
               session={session}
               status={status}
               online={online}
@@ -319,6 +369,12 @@ const WordleGame = () => {
             { !room &&
               <button className="button-text new-game-button friends-button" onClick={handlePlayWithFriends}>
                 <b>Play with friends</b>
+              </button>
+            }
+            { room &&
+              <button className="button-text new-game-button friends-button players-button" onClick={() => setPlayersOpen(true)}>
+                <span className={`dot ${status === 'connected' ? 'online' : 'waiting'}`} />
+                <b>Players · {Math.max(Object.keys(session.players).length, 1)}</b>
               </button>
             }
           </div>

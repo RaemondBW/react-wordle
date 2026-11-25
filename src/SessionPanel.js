@@ -10,6 +10,23 @@ export const playerOutcome = (player, word) => {
   return { done: false, solved: false, score: MAX_GUESSES + 2 };
 };
 
+// A stable colour per player, so their marker on the board and their card match.
+const PLAYER_COLORS = ['#3b7dd8', '#d0533a', '#8a4fc7', '#1f9c8f', '#d18b1f', '#c2417f', '#5a6b7d', '#6b8e23'];
+export const playerColor = (id) => {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return PLAYER_COLORS[hash % PLAYER_COLORS.length];
+};
+
+export const playerInitial = (name) => (Array.from((name || '?').trim())[0] || '?').toUpperCase();
+
+// Which board row a player's marker sits on: the guess they're working on,
+// or the row they finished on.
+export const markerRow = (player, outcome) => {
+  if (outcome.solved) return outcome.score - 1;
+  return Math.min(player.guesses.length, MAX_GUESSES - 1);
+};
+
 const outcomeText = (player, outcome) => {
   if (outcome.solved) return `Solved in ${outcome.score}`;
   if (outcome.done) return 'Out of guesses';
@@ -79,12 +96,14 @@ const SessionPanel = ({ session, status, online, playerId, word, iAmDone, onInvi
         {players.map(({ id, player, outcome }) => (
           <div className={`session-player ${id === playerId ? 'me' : ''}`} key={id}>
             <div className="session-player-name">
-              <span className={`dot ${online.includes(id) ? 'online' : ''}`} />
-              {player.name || 'Someone'}
-              {id === playerId && <button className="rename" onClick={onRename}>(you · rename)</button>}
+              <span className={`player-marker ${online.includes(id) ? '' : 'offline'}`}
+                style={{ backgroundColor: playerColor(id) }}>{playerInitial(player.name)}</span>
+              <span className="player-name-text">{player.name || 'Someone'}</span>
+              {id === playerId && <span className="you">(you)</span>}
             </div>
             <div className="session-player-outcome">{outcomeText(player, outcome)}</div>
             <MiniGrid guesses={player.guesses} word={word} showLetters={iAmDone || id === playerId} />
+            {id === playerId && <button className="rename" onClick={onRename}>Change name</button>}
           </div>
         ))}
       </div>
@@ -94,6 +113,15 @@ const SessionPanel = ({ session, status, online, playerId, word, iAmDone, onInvi
   );
 };
 
+export const SessionModal = ({ onClose, ...props }) => (
+  <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="modal-sheet" role="dialog" aria-modal="true" aria-label="Playing with friends">
+      <button className="modal-close" aria-label="Close" onClick={onClose}>×</button>
+      <SessionPanel {...props} />
+    </div>
+  </div>
+);
+
 export const NamePrompt = ({ initialName, onSubmit, onCancel }) => {
   const [name, setName] = useState(initialName);
   const submit = (e) => {
@@ -101,7 +129,7 @@ export const NamePrompt = ({ initialName, onSubmit, onCancel }) => {
     if (name.trim()) onSubmit(name);
   };
   return (
-    <div className="name-prompt-backdrop">
+    <div className="modal-backdrop">
       <form className="name-prompt" onSubmit={submit}>
         <b>What should your friends call you?</b>
         <input autoFocus maxLength={20} value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
