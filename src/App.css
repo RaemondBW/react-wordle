@@ -184,3 +184,181 @@
   animation: shake 0.5s;
   animation-iteration-count: 1;
 }
+.friends-button {
+  margin-left: 8px;
+}
+
+/* Play with friends */
+.session-panel {
+  max-width: 480px;
+  width: calc(100% - 32px);
+  margin: 16px auto 0;
+  padding: 12px;
+  border: 1px solid #d3d6da;
+  border-radius: 8px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.session-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.session-status {
+  font-size: 13px;
+  color: #787c7e;
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  background-color: #c4c7cb;
+  vertical-align: 1px;
+}
+
+.session-status.connected .dot,
+.dot.online {
+  background-color: #538d4e;
+}
+
+.session-status.reconnecting .dot,
+.session-status.connecting .dot {
+  background-color: #b59f3b;
+}
+
+.session-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.session-button {
+  flex: 1;
+  height: 38px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  color: white;
+  background-color: #538d4e;
+}
+
+.session-button.secondary {
+  color: #333;
+  background-color: #d3d6da;
+}
+
+.session-button:disabled {
+  cursor: default;
+  color: #787c7e;
+  background-color: #e6e7e9;
+}
+
+.session-flash {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #538d4e;
+  text-align: center;
+}
+
+.session-players {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.session-player {
+  padding: 8px;
+  border-radius: 6px;
+  background-color: #f4f5f6;
+}
+
+.session-player.me {
+  outline: 2px solid #d3d6da;
+}
+
+.session-player-name {
+  font-weight: bold;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.rename {
+  border: none;
+  background: none;
+  padding: 0 0 0 4px;
+  font-size: 12px;
+  color: #787c7e;
+  cursor: pointer;
+}
+
+.session-player-outcome {
+  font-size: 12px;
+  color: #787c7e;
+  margin: 2px 0 6px;
+}
+
+.mini-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mini-row {
+  display: flex;
+  gap: 2px;
+}
+
+.mini-tile {
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  font-size: 11px;
+  font-weight: bold;
+  text-align: center;
+  border-radius: 2px;
+}
+
+.session-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #787c7e;
+  text-align: center;
+}
+
+.name-prompt-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 10;
+}
+
+.name-prompt {
+  width: 100%;
+  max-width: 320px;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.name-prompt input {
+  height: 38px;
+  font-size: 16px;
+  padding: 0 8px;
+  text-align: center;
+}
