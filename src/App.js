@@ -61,6 +61,53 @@ const shareLink = async (text, url) => {
   }
 };
 
+// Submitted guesses are kept in localStorage and a year-long cookie. (They used
+// to live in a session cookie only, which iOS Safari drops when a tab closes.)
+const guessesKey = (word) => `wordle-guesses-${word}`;
+
+const submittedOnly = (list) => {
+  const out = [];
+  if (Array.isArray(list)) {
+    for (const guess of list) {
+      if (typeof guess !== 'string' || !/^[a-z]{5}$/.test(guess) || out.length >= numberOfGuesses) break;
+      out.push(guess);
+    }
+  }
+  return out;
+};
+
+const parseJson = (text) => {
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    return null;
+  }
+};
+
+const saveGuesses = (word, guesses) => {
+  const json = JSON.stringify(guesses);
+  Cookies.set(word, json, { expires: 365 });
+  try {
+    window.localStorage.setItem(guessesKey(word), json);
+  } catch (e) {
+    // Storage unavailable: the cookie still has it.
+  }
+};
+
+// The longest of everything we have on this device, including our own entry in
+// the room's shared copy.
+const loadGuesses = (word, roomGuesses) => {
+  let stored = null;
+  try {
+    stored = window.localStorage.getItem(guessesKey(word));
+  } catch (e) {
+    stored = null;
+  }
+  return [parseJson(Cookies.get(word)), parseJson(stored), roomGuesses]
+    .map(submittedOnly)
+    .reduce((best, candidate) => (candidate.length > best.length ? candidate : best), []);
+};
+
 const getKeyboardLetterColors = (guesses, answer) => {
   const colors = {};
   guesses.forEach((guess) => {
@@ -250,7 +297,7 @@ const WordleGame = () => {
       if (newGuesses[guessIndex].length === wordLength && isValidWord(newGuesses[guessIndex])) {
         setRevealingRow(guessIndex);
         setGuessIndex(guessIndex + 1);
-        Cookies.set(word, JSON.stringify(newGuesses));
+        saveGuesses(word, newGuesses);
       } else {
         setInvalidGuess(true);
       }
@@ -283,10 +330,13 @@ const WordleGame = () => {
     }
     if ('word' in args) {
       setWord(args['word']);
-      if (Cookies.get(args['word'])) {
-        const savedGuesses = JSON.parse(Cookies.get(args['word']));
-        setPreviousGuesses(savedGuesses);
-        setGuessIndex(savedGuesses.filter((guess) => guess.length === wordLength).length);
+      const mine = session.players[playerId];
+      const submitted = loadGuesses(args['word'], mine ? mine.guesses : null);
+      if (submitted.length > 0) {
+        const restored = [...submitted, ...Array(numberOfGuesses - submitted.length).fill('')];
+        setPreviousGuesses(restored);
+        setGuessIndex(submitted.length);
+        saveGuesses(args['word'], restored);
       }
     }
 
@@ -295,6 +345,8 @@ const WordleGame = () => {
     .then(data => {
       setScrabbleDictionary(new Set(data.dictionary[wordLength-1]));
     });
+    // Runs once on load; the room session it reads is already loaded from storage.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Re-subscribed on every render so the handler always sees the current game state.
